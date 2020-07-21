@@ -6,22 +6,13 @@
     android:layout_height="match_parent"
     tools:context=".BookListActivity">
 
-    <ScrollView
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_books"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="match_parent"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:listitem="@layout/book_list_item" />
 
-        <TextView
-            android:id="@+id/tvResponse"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="TextView"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-
-    </ScrollView>
 
 
     <ProgressBar
