@@ -1,10 +1,12 @@
 package com.example.books;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.MenuItemCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -31,9 +33,15 @@ public class BookListActivity extends AppCompatActivity implements SearchView.On
         rvBooks = (RecyclerView) findViewById(R.id.rv_books);
         LinearLayoutManager booksLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL,false);
         rvBooks.setLayoutManager(booksLayoutManager);
-
+//        Intent intent = getIntent();
+//        String query = intent.getStringExtra("Query");
+        URL bookURL;
         try{
-            URL bookURL = ApiUtil.buildURL("cooking");
+            if(ApiUtil.SEARCH_ACTIVTY_URL == null){
+                bookURL = ApiUtil.buildURL("cooking");
+            }else {
+                 bookURL = ApiUtil.SEARCH_ACTIVTY_URL;
+            }
              String jsonResult = ApiUtil.getJson(bookURL);
             new BookQueryTask().execute(bookURL);
         }catch (Exception ex){
@@ -65,7 +73,7 @@ public class BookListActivity extends AppCompatActivity implements SearchView.On
             URL searchURL = urls[0];
             String result = null;
             try {
-                result = ApiUtil.run(searchURL);
+                result = ApiUtil.getJson(searchURL);
             }catch (Exception ex){
                 Log.d("Error",ex.getMessage());
 
@@ -84,12 +92,11 @@ public class BookListActivity extends AppCompatActivity implements SearchView.On
             }else {
                 rvBooks .setVisibility(View.VISIBLE);
                 tvError.setVisibility(View.INVISIBLE);
+                ArrayList<Book> books = ApiUtil.getBooksfromJson(result);
+                String resultString = "";
+                BooksAdapter adapter = new BooksAdapter(books);
+                rvBooks.setAdapter(adapter);
             }
-            ArrayList<Book> books = ApiUtil.getBooksfromJson(result);
-            String resultString = "";
-            BooksAdapter adapter = new BooksAdapter(books);
-            rvBooks.setAdapter(adapter);
-
 
         }
 
@@ -106,6 +113,42 @@ public class BookListActivity extends AppCompatActivity implements SearchView.On
         final MenuItem searchItem = menu.findItem(R.id.actoin_Search);
         final SearchView searchView = (SearchView) searchItem.getActionView();
         searchView.setOnQueryTextListener(this);
+        ArrayList<String> recentList = SpUtil.getQueryList(getApplicationContext());
+        int itemNum = recentList.size();
+        MenuItem recentMenu;
+        for(int i = 0; i <itemNum; i++ ){
+            recentMenu = menu.add(Menu.NONE,i, Menu.NONE,recentList.get(i));
+
+        }
+
         return true;
+    }
+
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        switch (item.getItemId()){
+            case R.id.action_advanced_search:
+                startActivity(new Intent(this, SearchActivity.class));
+                return true;
+            default:
+                int position = item.getItemId() + 1;
+                String preferenceName = SpUtil.QUERY + String.valueOf(position);
+                String query = SpUtil.getPreferenceString(getApplicationContext(),preferenceName);
+                String[] prefParams = query.split("\\,");
+                String[] queryParams = new String[4];
+                for(int i = 0; i < prefParams.length; i++){
+                    queryParams[i] = prefParams[i];
+                }
+                URL bookUrl = ApiUtil.buildURL(
+                        (queryParams[0] == null) ? "":queryParams[0],
+                        (queryParams[1] == null) ? "":queryParams[1],
+                        (queryParams[2] == null) ? "":queryParams[2],
+                        (queryParams[3] == null) ? "":queryParams[3]
+                );
+                new BookQueryTask().execute(bookUrl);
+                return super.onOptionsItemSelected(item);
+        }
+
     }
 }
